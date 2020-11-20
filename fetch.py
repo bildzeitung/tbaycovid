@@ -16,10 +16,11 @@ def main():
   """
   rv = requests.get(URL, stream=True)
   rv.raise_for_status()
+  print(rv.headers)
 
   # grab YYYY-MM-DD from Etag (timestamp)
   sse = float(rv.headers["ETag"].replace('"',"").split("-")[0])
-  date = datetime.fromtimestamp(sse).strftime("%Y-%M-%d")
+  date = datetime.fromtimestamp(sse).strftime("%Y-%m-%d")
 
   fname = DATADIR / Path(f"{date}-provincial-covid.csv")
   with open(fname, "w") as f:
