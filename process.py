@@ -12,7 +12,6 @@ from datetime import datetime, timedelta
 import matplotlib
 import matplotlib.pylab as plt
 import matplotlib.ticker as ticker
-from seaborn import palettes
 matplotlib.use('Agg')
 import seaborn as sns
 import pandas as pd
@@ -27,6 +26,7 @@ def get_data():
   fnames = sorted(x for x in DATADIR.glob("*.csv"))
   latest = fnames[-1]
   date = "-".join(latest.name.split("-")[0:3])
+  print(f"Latest file: {latest}")
   return open(latest), date
 
 
@@ -84,12 +84,36 @@ def make_cumulative(lines, filedate):
     current = current + timedelta(days=1)
   
   s = pd.DataFrame(data, columns=["date", "cases"])
-  print(s.tail())
+  print(s)
   ax = sns.lineplot(data=s, x="date", y="cases", palette="Blues_d")
   ax.set(xlabel="Date", ylabel="Cases", title=f"T Bay Cumulative Cases Since Tracking Began ({data[-1][0]})")
   ax.xaxis.set_major_locator(ticker.MultipleLocator(14))
   plt.xticks(rotation=90)
   ax.figure.savefig(GRAPHDIR / Path(f"{filedate}-cumulative.png"))
+
+
+def make_by_day(lines, filedate):
+  """ Create a graph of new cases by earliest incident date
+  """
+  d = defaultdict(int)
+  for line in lines:
+    d[line["Accurate_Episode_Date"]] += 1
+  current = datetime.strptime(sorted(d.keys())[0], "%Y-%m-%d")
+  end = datetime.strptime(sorted(d.keys())[-1], "%Y-%m-%d")
+  data = []
+  all_dates = []
+  while current <= end:
+    cstr = current.strftime("%Y-%m-%d")
+    all_dates.append(cstr)
+    data.append([cstr, d[cstr]])
+    current = current + timedelta(days=1)
+  s = pd.DataFrame(data, columns=["date", "cases"])
+  print(s)
+  ax = sns.lineplot(data=s, x="date", y="cases", palette="Blues_d")
+  ax.set(xlabel="Date", ylabel="Cases", title=f"T Bay Cases by Episode Date ({data[-1][0]})")
+  ax.xaxis.set_major_locator(ticker.MultipleLocator(14))
+  plt.xticks(rotation=90)
+  ax.figure.savefig(GRAPHDIR / Path(f"{filedate}-by-date.png"))
 
 
 def main():
@@ -100,8 +124,10 @@ def main():
   lines = [line for line in r if is_tbay(line)]
 
   # reports ..
-  make_by_age(lines, filedate)
-  make_cumulative(lines, filedate)
+  reports = (make_by_day, make_cumulative, make_by_age)
+  for r in reports:
+    r(lines, filedate)
+    plt.clf()
 
 
 if __name__ == "__main__":
