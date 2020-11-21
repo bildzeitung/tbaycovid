@@ -18,7 +18,10 @@ DATADIR = Path("data")
 GRAPHDIR = Path("graphs")
 WINDOW = 5
 AGE_CATEGORIES = ("<20", "20s", "30s", "40s", "50s", "60s", "70s", "80s", "90s")
-HEALTH_UNITS = {"Northwestern Health Unit": "NWHU", "Thunder Bay District Health Unit": "TBDHU"}
+HEALTH_UNITS = {
+    "Northwestern Health Unit": "NWHU",
+    "Thunder Bay District Health Unit": "TBDHU",
+}
 
 
 def get_data():
@@ -118,7 +121,7 @@ def main():
     frame = pd.read_csv(data)
 
     for h in HEALTH_UNITS:
-      process_health_unit(h, filedate, frame)
+        process_health_unit(h, filedate, frame)
 
 
 if __name__ == "__main__":
