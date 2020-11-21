@@ -17,6 +17,8 @@ from pandas.api.types import CategoricalDtype
 DATADIR = Path("data")
 GRAPHDIR = Path("graphs")
 WINDOW = 5
+AGE_CATEGORIES = ("<20", "20s", "30s", "40s", "50s", "60s", "70s", "80s", "90s")
+HEALTH_UNITS = {"Northwestern Health Unit": "NWHU", "Thunder Bay District Health Unit": "TBDHU"}
 
 
 def get_data():
@@ -28,7 +30,7 @@ def get_data():
     return open(latest), date
 
 
-def make_by_age(frame, filedate):
+def make_by_age(frame, filedate, unit):
     """Active cases, grouped by age"""
     q = frame.query("Outcome1 == 'Not Resolved'")
     gb = q.groupby("byAge", as_index=False).agg(
@@ -42,12 +44,12 @@ def make_by_age(frame, filedate):
     ax.set(
         xlabel="Age Group",
         ylabel="Active Cases",
-        title=f"T Bay Active Cases by Age Group ({max_date})",
+        title=f"{unit} Active Cases by Age Group ({max_date})",
     )
     ax.figure.savefig(GRAPHDIR / Path(f"{filedate}-by-age.png"))
 
 
-def make_cumulative(frame, filedate):
+def make_cumulative(frame, filedate, unit):
     """Create a cumulative graph of cases over time"""
     gb = frame.groupby("Accurate_Episode_Date", as_index=False).agg(
         patients=pd.NamedAgg(column="Row_ID", aggfunc="size")
@@ -60,7 +62,7 @@ def make_cumulative(frame, filedate):
     ax.set(
         ylabel="Cumulative case count",
         xlabel="Date",
-        title=f"T Bay Cumulative Cases by Episode Date ({max_date})",
+        title=f"{unit} Cumulative Cases by Episode Date ({max_date})",
     )
     ax2 = plt.twinx()
     sns.barplot(
@@ -72,7 +74,7 @@ def make_cumulative(frame, filedate):
     ax.figure.savefig(GRAPHDIR / Path(f"{filedate}-cumulative.png"))
 
 
-def make_by_day(frame, filedate):
+def make_by_day(frame, filedate, unit):
     """Create a graph of new cases by earliest incident date"""
     gb = frame.groupby("Accurate_Episode_Date", as_index=False).agg(
         patients=pd.NamedAgg(column="Row_ID", aggfunc="size")
@@ -89,7 +91,7 @@ def make_by_day(frame, filedate):
     ax.set(
         ylabel="# of cases",
         xlabel="Date",
-        title=f"T Bay Cases by Episode Date ({max_date})",
+        title=f"{unit} Cases by Episode Date ({max_date})",
     )
 
     plt.legend(["daily", f"{WINDOW} day avg"])
@@ -97,25 +99,26 @@ def make_by_day(frame, filedate):
     ax.figure.savefig(GRAPHDIR / Path(f"{filedate}-by-date.png"))
 
 
+def process_health_unit(unit, filedate, frame):
+    frame = frame.query(f"Reporting_PHU=='{unit}'").copy()
+    frame["byAge"] = frame["Age_Group"].astype(
+        CategoricalDtype(AGE_CATEGORIES, ordered=True)
+    )
+    # reports ..
+    reports = (make_by_day, make_cumulative, make_by_age)
+    for r in reports:
+        r(frame, f"{unit.lower().replace(' ', '-')}-{filedate}", HEALTH_UNITS[unit])
+        plt.clf()
+
+
 def main():
     sns.set_theme()
 
     data, filedate = get_data()
-
     frame = pd.read_csv(data)
-    frame = frame.query("Reporting_PHU_City=='Thunder Bay'").copy()
 
-    age_categories = ("<20", "20s", "30s", "40s", "50s", "60s", "70s", "80s", "90s")
-    frame["byAge"] = frame["Age_Group"].astype(
-        CategoricalDtype(age_categories, ordered=True)
-    )
-
-    print(frame)
-    # reports ..
-    reports = (make_by_day, make_cumulative, make_by_age)
-    for r in reports:
-        r(frame, filedate)
-        plt.clf()
+    for h in HEALTH_UNITS:
+      process_health_unit(h, filedate, frame)
 
 
 if __name__ == "__main__":
