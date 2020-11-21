@@ -63,9 +63,11 @@ def make_cumulative(frame, filedate):
         title=f"T Bay Cumulative Cases by Episode Date ({max_date})",
     )
     ax2 = plt.twinx()
-    sns.barplot(data=gb, x="Accurate_Episode_Date", y="patients", ax=ax2, palette="Blues_d")
+    sns.barplot(
+        data=gb, x="Accurate_Episode_Date", y="patients", ax=ax2, palette="Blues_d"
+    )
     ax2.xaxis.set_major_locator(ticker.MultipleLocator(14))
-    ax2.set(ylim=(0, gb["patients"].max()*2))
+    ax2.set(ylim=(0, gb["patients"].max() * 2))
     plt.gcf().autofmt_xdate()
     ax.figure.savefig(GRAPHDIR / Path(f"{filedate}-cumulative.png"))
 
