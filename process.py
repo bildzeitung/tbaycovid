@@ -40,7 +40,7 @@ def make_by_age(frame, filedate, unit):
         patients=pd.NamedAgg(column="byAge", aggfunc="size")
     )
     print(gb)
-    max_date = q["Accurate_Episode_Date"].max()
+    max_date = q["Accurate_Episode_Date"].max().strftime("%Y-%m-%d")
 
     # make the graph
     ax = sns.barplot(data=gb, palette="Blues_d", y="patients", x="byAge")
@@ -54,24 +54,24 @@ def make_by_age(frame, filedate, unit):
 
 def make_cumulative(frame, filedate, unit):
     """Create a cumulative graph of cases over time"""
-    gb = frame.groupby("Accurate_Episode_Date", as_index=False).agg(
-        patients=pd.NamedAgg(column="Row_ID", aggfunc="size")
-    )
-    max_date = gb["Accurate_Episode_Date"].max()
-    gb["cumulative"] = gb.patients.cumsum()
+    gb = frame.groupby("Accurate_Episode_Date").agg(patients=("Row_ID", "count"))
+    gb = gb.resample("D").last().fillna(0).reset_index()
+    max_date = gb["Accurate_Episode_Date"].max().strftime("%Y-%m-%d")
+    gb["cumulative"] = gb.patients.cumsum().astype(int)
     print(gb)
-    ax = sns.lineplot(data=gb, x="Accurate_Episode_Date", y="cumulative")
-    ax.xaxis.set_major_locator(ticker.MultipleLocator(14))
+    print(gb.info())
+    ax = sns.lineplot(
+        data=gb, x="Accurate_Episode_Date", y="cumulative", linewidth=2, color="red"
+    )
     ax.set(
         ylabel="Cumulative case count",
         xlabel="Date",
         title=f"{unit} Cumulative Cases by Episode Date ({max_date})",
     )
     ax2 = plt.twinx()
-    sns.barplot(
-        data=gb, x="Accurate_Episode_Date", y="patients", ax=ax2, palette="Blues_d"
+    sns.lineplot(
+        data=gb, x="Accurate_Episode_Date", y="patients", ax=ax2, linewidth=0.5
     )
-    ax2.xaxis.set_major_locator(ticker.MultipleLocator(14))
     ax2.set(ylim=(0, gb["patients"].max() * 2))
     plt.gcf().autofmt_xdate()
     ax.figure.savefig(GRAPHDIR / Path(f"{filedate}-cumulative.png"))
@@ -79,18 +79,17 @@ def make_cumulative(frame, filedate, unit):
 
 def make_by_day(frame, filedate, unit):
     """Create a graph of new cases by earliest incident date"""
-    gb = frame.groupby("Accurate_Episode_Date", as_index=False).agg(
+    gb = frame.groupby("Accurate_Episode_Date").agg(
         patients=pd.NamedAgg(column="Row_ID", aggfunc="size")
     )
-    max_date = gb["Accurate_Episode_Date"].max()
-    print(gb)
+    gb = gb.resample("D").last().fillna(0).reset_index()
+    max_date = gb["Accurate_Episode_Date"].max().strftime("%Y-%m-%d")
     gb["rolling-avg"] = gb["patients"].rolling(WINDOW).mean()
     print(gb)
     ax = sns.lineplot(
         data=gb, x="Accurate_Episode_Date", y="patients", linestyle="--", linewidth=1
     )
     ax = sns.lineplot(data=gb, x="Accurate_Episode_Date", y="rolling-avg", linewidth=2)
-    ax.xaxis.set_major_locator(ticker.MultipleLocator(14))
     ax.set(
         ylabel="# of cases",
         xlabel="Date",
@@ -104,6 +103,9 @@ def make_by_day(frame, filedate, unit):
 
 def process_health_unit(unit, filedate, frame):
     frame = frame.query(f"Reporting_PHU=='{unit}'").copy()
+    frame["Accurate_Episode_Date"] = pd.to_datetime(
+        frame["Accurate_Episode_Date"], format="%Y-%m-%d"
+    )
     frame["byAge"] = frame["Age_Group"].astype(
         CategoricalDtype(AGE_CATEGORIES, ordered=True)
     )
