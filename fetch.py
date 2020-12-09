@@ -15,7 +15,7 @@ def main():
     """Download provincial data"""
     rv = requests.get(URL, stream=True)
     rv.raise_for_status()
-    print(rv.headers)
+    print(rv.headers['Last-Modified'])
 
     # grab YYYY-MM-DD from Etag (timestamp)
     sse = float(rv.headers["ETag"].replace('"', "").split("-")[0])
