@@ -26,7 +26,7 @@ HEALTH_UNITS = {
 
 def get_data():
     """Choose latest data file"""
-    fnames = sorted(x for x in DATADIR.glob("*.csv"))
+    fnames = sorted(x for x in DATADIR.glob("*provincial-covid.csv"))
     latest = fnames[-1]
     date = "-".join(latest.name.split("-")[0:3])
     print(f"Latest file: {latest}")
@@ -73,6 +73,7 @@ def make_cumulative(frame, filedate, unit):
         data=gb, x="Accurate_Episode_Date", y="patients", ax=ax2, linewidth=0.5
     )
     ax2.set(ylim=(0, gb["patients"].max() * 2))
+    plt.subplots(figsize=(15,6))
     plt.gcf().autofmt_xdate()
     ax.figure.savefig(GRAPHDIR / Path(f"{filedate}-cumulative.png"))
 
