@@ -132,3 +132,6 @@ dmypy.json
 data
 graphs
 graphs-old
+
+# sensitive
+twitter.json

@@ -2,7 +2,7 @@
 """
   Process Health Unit Case by Status COVID data
 """
-
+from itertools import chain
 from pathlib import Path
 
 import matplotlib
@@ -35,10 +35,8 @@ def make_by_day(frame, filedate, unit):
     max_date = gb["FILE_DATE"].max().strftime("%Y-%m-%d")
     gb["resolved_by_delta"] = gb["RESOLVED_CASES"].diff().fillna(0).astype(int)
     gb["deaths_delta"] = gb["DEATHS"].diff().fillna(0).astype(int)
-    print(gb)
-    ax = sns.lineplot(
-        data=gb, x="FILE_DATE", y="ACTIVE_CASES", linewidth=1
-    )
+    # print(gb)
+    ax = sns.lineplot(data=gb, x="FILE_DATE", y="ACTIVE_CASES", linewidth=1)
     ax = sns.lineplot(data=gb, x="FILE_DATE", y="resolved_by_delta", linewidth=1)
     ax = sns.lineplot(data=gb, x="FILE_DATE", y="deaths_delta", linewidth=1)
     ax.set(
@@ -49,31 +47,40 @@ def make_by_day(frame, filedate, unit):
 
     plt.legend(["active", "resolved", "deaths"])
     plt.gcf().autofmt_xdate()
-    ax.figure.savefig(GRAPHDIR / Path(f"{filedate}-case-count-by-date.png"))
+    fname = GRAPHDIR / Path(f"{filedate}-case-count-by-date.png")
+    ax.figure.savefig(fname)
+    return fname
 
 
 def process_health_unit(unit, filedate, frame):
     frame = frame.query(f"PHU_NAME=='{unit}'").copy()
 
-    frame["FILE_DATE"] = pd.to_datetime(
-        frame["FILE_DATE"], format="%Y%m%d"
-    )
+    frame["FILE_DATE"] = pd.to_datetime(frame["FILE_DATE"], format="%Y%m%d")
 
     # reports ..
     reports = (make_by_day,)
+    fnames = []
     for r in reports:
-        r(frame, f"{unit.lower().replace(' ', '-')}-{filedate}", HEALTH_UNITS[unit])
+        fnames.append(
+            r(frame, f"{unit.lower().replace(' ', '-')}-{filedate}", HEALTH_UNITS[unit])
+        )
         plt.clf()
+    return fnames
+
+
+def process_status(data, filedate):
+    sns.set_theme()
+    sns.set(rc={"figure.figsize": (15, 6)})
+    frame = pd.read_csv(data)
+
+    return chain.from_iterable(
+        process_health_unit(h, filedate, frame) for h in HEALTH_UNITS
+    )
 
 
 def main():
-    sns.set_theme()
-    sns.set(rc={'figure.figsize':(15,6)})
     data, filedate = get_data()
-    frame = pd.read_csv(data)
-
-    for h in HEALTH_UNITS:
-        process_health_unit(h, filedate, frame)
+    process_status(data, filedate)
 
 
 if __name__ == "__main__":

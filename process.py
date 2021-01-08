@@ -2,7 +2,7 @@
 """
   Process Ontario provincial COVID daily data
 """
-
+from itertools import chain
 from pathlib import Path
 
 import matplotlib
@@ -49,7 +49,9 @@ def make_by_age(frame, filedate, unit):
         ylabel="Active Cases",
         title=f"{unit} Active Cases by Age Group ({max_date})",
     )
-    ax.figure.savefig(GRAPHDIR / Path(f"{filedate}-by-age.png"))
+    fname = GRAPHDIR / Path(f"{filedate}-by-age.png")
+    ax.figure.savefig(fname)
+    return fname
 
 
 def make_cumulative(frame, filedate, unit):
@@ -73,9 +75,11 @@ def make_cumulative(frame, filedate, unit):
         data=gb, x="Accurate_Episode_Date", y="patients", ax=ax2, linewidth=0.5
     )
     ax2.set(ylim=(0, gb["patients"].max() * 2))
-    plt.subplots(figsize=(15,6))
+    plt.subplots(figsize=(15, 6))
     plt.gcf().autofmt_xdate()
-    ax.figure.savefig(GRAPHDIR / Path(f"{filedate}-cumulative.png"))
+    fname = GRAPHDIR / Path(f"{filedate}-cumulative.png")
+    ax.figure.savefig(fname)
+    return fname
 
 
 def make_by_day(frame, filedate, unit):
@@ -99,7 +103,9 @@ def make_by_day(frame, filedate, unit):
 
     plt.legend(["daily", f"{WINDOW} day avg"])
     plt.gcf().autofmt_xdate()
-    ax.figure.savefig(GRAPHDIR / Path(f"{filedate}-by-date.png"))
+    fname = GRAPHDIR / Path(f"{filedate}-by-date.png")
+    ax.figure.savefig(fname)
+    return fname
 
 
 def process_health_unit(unit, filedate, frame):
@@ -111,20 +117,29 @@ def process_health_unit(unit, filedate, frame):
         CategoricalDtype(AGE_CATEGORIES, ordered=True)
     )
     # reports ..
+    fnames = []
     reports = (make_by_day, make_cumulative, make_by_age)
     for r in reports:
-        r(frame, f"{unit.lower().replace(' ', '-')}-{filedate}", HEALTH_UNITS[unit])
+        fnames.append(
+            r(frame, f"{unit.lower().replace(' ', '-')}-{filedate}", HEALTH_UNITS[unit])
+        )
         plt.clf()
+    return fnames
+
+
+def process_reports(data, filedate):
+    sns.set_theme()
+
+    frame = pd.read_csv(data)
+
+    return chain.from_iterable(
+        process_health_unit(h, filedate, frame) for h in HEALTH_UNITS
+    )
 
 
 def main():
-    sns.set_theme()
-
     data, filedate = get_data()
-    frame = pd.read_csv(data)
-
-    for h in HEALTH_UNITS:
-        process_health_unit(h, filedate, frame)
+    process_reports(data, filedate)
 
 
 if __name__ == "__main__":
