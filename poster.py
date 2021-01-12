@@ -28,7 +28,8 @@ def main():
     assets = []
     for d, n, f in as_at_dates:
         print(f"Checking {d} [{f}]")
-        assert dateparser.parse(d).date() == now, f"Stats not ready yet: {d}"
+        data_date = dateparser.parse(d).date()
+        assert data_date == now, f"Stats not ready yet: {now} vs {data_date}"
         if n == "case-by-status":
             assets.extend(process_status(open(f), now))
         if n == "provincial-covid":
