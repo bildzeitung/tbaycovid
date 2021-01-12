@@ -56,6 +56,7 @@ def process_health_unit(unit, filedate, frame):
     frame = frame.query(f"PHU_NAME=='{unit}'").copy()
 
     frame["FILE_DATE"] = pd.to_datetime(frame["FILE_DATE"], format="%Y%m%d")
+    frame = frame[frame.FILE_DATE > pd.to_datetime("2020/09/01")]
 
     # reports ..
     reports = (make_by_day,)
@@ -80,7 +81,7 @@ def process_status(data, filedate):
 
 def main():
     data, filedate = get_data()
-    process_status(data, filedate)
+    print([x for x in process_status(data, filedate)])
 
 
 if __name__ == "__main__":

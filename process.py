@@ -4,6 +4,7 @@
 """
 from itertools import chain
 from pathlib import Path
+from datetime import date
 
 import matplotlib
 import matplotlib.pylab as plt
@@ -13,6 +14,8 @@ matplotlib.use("Agg")
 import seaborn as sns
 import pandas as pd
 from pandas.api.types import CategoricalDtype
+
+plt.subplots(figsize=(15, 6))
 
 DATADIR = Path("data")
 GRAPHDIR = Path("graphs")
@@ -75,7 +78,6 @@ def make_cumulative(frame, filedate, unit):
         data=gb, x="Accurate_Episode_Date", y="patients", ax=ax2, linewidth=0.5
     )
     ax2.set(ylim=(0, gb["patients"].max() * 2))
-    plt.subplots(figsize=(15, 6))
     plt.gcf().autofmt_xdate()
     fname = GRAPHDIR / Path(f"{filedate}-cumulative.png")
     ax.figure.savefig(fname)
@@ -116,6 +118,7 @@ def process_health_unit(unit, filedate, frame):
     frame["byAge"] = frame["Age_Group"].astype(
         CategoricalDtype(AGE_CATEGORIES, ordered=True)
     )
+    frame = frame[frame.Accurate_Episode_Date > pd.to_datetime("2020/09/01")]
     # reports ..
     fnames = []
     reports = (make_by_day, make_cumulative, make_by_age)
@@ -139,7 +142,7 @@ def process_reports(data, filedate):
 
 def main():
     data, filedate = get_data()
-    process_reports(data, filedate)
+    print([x for x in process_reports(data, filedate)])
 
 
 if __name__ == "__main__":
