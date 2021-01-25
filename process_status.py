@@ -55,7 +55,7 @@ def make_by_day(frame, filedate, unit):
 def process_health_unit(unit, filedate, frame):
     frame = frame.query(f"PHU_NAME=='{unit}'").copy()
 
-    frame["FILE_DATE"] = pd.to_datetime(frame["FILE_DATE"], format="%Y%m%d")
+    frame["FILE_DATE"] = pd.to_datetime(frame["FILE_DATE"], format="%Y-%m-%d")
     frame = frame[frame.FILE_DATE > pd.to_datetime("2020/09/01")]
 
     # reports ..
