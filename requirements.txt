@@ -2,3 +2,4 @@ dateparser
 requests
 seaborn
 python-twitter
+scrapy
