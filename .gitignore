@@ -130,6 +130,7 @@ dmypy.json
 
 # output
 data
+data-travel
 graphs
 graphs-old
 
