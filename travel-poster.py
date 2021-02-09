@@ -13,24 +13,24 @@ from types import SimpleNamespace
 import json
 
 
-DATADIR = Path('data-travel')
+DATADIR = Path("data-travel")
 CHUNKS = 3
 
 
 def main():
     latest = sorted(x for x in DATADIR.glob("*.jl"))[-1]
     with open(latest) as f:
-      data = [json.loads(x)['fragment'] for x in f]
-    
+        data = [json.loads(x)["fragment"] for x in f]
+
     def chunks():
         for i in range(0, len(data), CHUNKS):
-            yield data[i:i+CHUNKS]
+            yield data[i : i + CHUNKS]
 
     all_chunks = [c for c in chunks()]
     l = len(all_chunks)
     tweets = []
     for x, c in enumerate(all_chunks):
-        f = '\n'.join(c)
+        f = "\n".join(c)
         s = f"[{x+1}/{l}] Flights with potential COVID exposure:\n{f}\n@TBDHealthUnit  @CityThunderBay"
         tweets.append(s)
 

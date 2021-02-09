@@ -10,13 +10,13 @@ from scrapy.exceptions import DropItem
 
 
 def aircode(item):
-    return item.split('(')[-1][:-1]
+    return item.split("(")[-1][:-1]
+
 
 class CanadaPipeline:
-
     def process_item(self, item, spider):
         adapter = ItemAdapter(item)
-        if 'YQT' in adapter.get('depart') or 'YQT' in adapter.get('dest'):
+        if "YQT" in adapter.get("depart") or "YQT" in adapter.get("dest"):
             fragment = f"{aircode(adapter['flight'])} from {aircode(adapter['depart'])} to {aircode(adapter['dest'])} on {adapter['date']}, rows {adapter['rows']}"
             return {"fragment": fragment}
         raise DropItem("Not relevant")
