@@ -2,11 +2,9 @@
 """
   Post daily travel advisories
 """
-import dateparser
 import json
 import twitter
 
-from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
 
