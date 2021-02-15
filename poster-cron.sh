@@ -5,9 +5,12 @@ eval "$(pyenv init -)"
 eval "$(pyenv virtualenv-init -)"
 
 SLEEP=120
+RETRIES=30
 
-until python ./poster.py
+n=0
+until python ./poster.py  || [[ "$n" -ge ${RETRIES} ]]
 do
-  echo "Posting failed; sleeping ${SLEEP} seconds..."
+  echo "Post attempt ${n} / ${RETRIES} failed; sleeping ${SLEEP} seconds..."
   sleep "${SLEEP}"
+  n=$((n+1))
 done
